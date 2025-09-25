@@ -141,5 +141,46 @@ temp/
 # Cursor/SpecStory workspace artifacts
 .cursor/rules/
 .specstory/
-frontend/env.example
-backend/env.example
+# frontend/env.example
+# backend/env.example
+
+.qa/Cookify_API_Local.postman_environment.json
+
+# --- Node / Vite (frontend) ---
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+# lockfile should be committed
+# (keep) frontend/package-lock.json
+
+# --- Python / FastAPI (backend) ---
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/.venv/
+backend/venv/
+**/*.pyc
+**/*.pyo
+
+# --- Env files (keep examples, ignore real) ---
+.env
+*.env
+**/.env
+# keep example envs
+!frontend/env.example
+!backend/env.example
+
+# --- Postman ---
+# ignore local envs, keep examples & collections
+qa/*postman_environment.json
+!qa/*postman_environment.example.json
+# keep collections
+!qa/*.postman_collection.json
+
+# --- OS / Editors / misc ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
