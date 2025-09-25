@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { api, RegisterData, LoginData } from '../api';
+import React, { useEffect, useState } from 'react';
+import { api, RegisterData, LoginData, AppStats } from '../api';
 
 interface LoginFormProps {
   onLogin: (token: string) => void;
@@ -11,6 +11,28 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [stats, setStats] = useState<AppStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState<boolean>(true);
+  const [statsError, setStatsError] = useState<string>('');
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        setStatsLoading(true);
+        setStatsError('');
+        const s = await api.getStats();
+        if (isMounted) setStats(s);
+      } catch (e) {
+        if (isMounted) setStatsError('Unable to load stats');
+      } finally {
+        if (isMounted) setStatsLoading(false);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +121,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
             required
             disabled={isLoading}
             placeholder="Enter your password"
-            minLength={6}
           />
         </div>
 
@@ -122,6 +143,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
           </button>
         </div>
       </form>
+
+      <div style={{ marginTop: '1rem', fontSize: '0.95rem', opacity: 0.9 }}>
+        {statsLoading && <span>Loading app stats…</span>}
+        {!statsLoading && statsError && (
+          <span style={{ color: '#c00' }}>{statsError}</span>
+        )}
+        {!statsLoading && !statsError && stats && (
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div><strong>{stats.users}</strong> users</div>
+            <div><strong>{stats.saved_recipes}</strong> saved recipes</div>
+            <div><strong>{stats.pantry_items}</strong> pantry items</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

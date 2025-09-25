@@ -1,0 +1,705 @@
+{
+	"info": {
+		"_postman_id": "66cb6b43-9163-4dfc-aac1-c0c9fc8c6e22",
+		"name": "Cookify",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46840520"
+	},
+	"item": [
+		{
+			"name": "AUTH-LOGIN",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"\r",
+							"let resp = {};\r",
+							"try {\r",
+							"  resp = pm.response.json();\r",
+							"} catch (e) {\r",
+							"  console.log(\"Login response not JSON:\", pm.response.text());\r",
+							"}\r",
+							"\r",
+							"// Your backend returns { \"access\": \"<JWT>\" }\r",
+							"const token = resp.access;\r",
+							"pm.expect(token, \"login response must include 'access'\").to.be.a(\"string\");\r",
+							"\r",
+							"// Save token for other requests\r",
+							"pm.environment.set(\"auth_token\", token);\r",
+							"pm.environment.set(\"auth_token_type\", \"Bearer\");\r",
+							"\r",
+							"// Helpful debug log\r",
+							"console.log(\"Saved token (first 16 chars):\", token ? token.slice(0, 16) + \"...\" : null);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"{{Test_email}}\",\r\n  \"password\": \"{{Test_password}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/auth/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Health",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"pm.test(\"Timp < 1500ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"packages": {},
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AUTH-REGISTER",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200/201/409 sau 422\", () => pm.expect([200,201,409,422]).to.include(pm.response.code));\r",
+							"\r",
+							"if (pm.response.code === 422) {\r",
+							"  // arată motivul exact în Console\r",
+							"  try {\r",
+							"    const err = pm.response.json();\r",
+							"    console.log(\"REGISTER 422 detail:\", err.detail);\r",
+							"  } catch(e) {\r",
+							"    console.log(\"REGISTER 422 (non-JSON) body:\", pm.response.text());\r",
+							"  }\r",
+							"}\r",
+							"\r",
+							"if ([200,201].includes(pm.response.code)) {\r",
+							"  const u = pm.response.json();\r",
+							"  pm.test(\"UserPublic shape\", () => {\r",
+							"    pm.expect(u).to.have.property(\"id\");\r",
+							"    pm.expect(u).to.have.property(\"email\");\r",
+							"    pm.expect(u).to.have.property(\"created_at\");\r",
+							"  });\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"{{Test_email}}\",\r\n  \"password\": \"{{Test_password}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/auth/register",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AUTH-ME",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const t = pm.environment.get(\"auth_token\");\r",
+							"if (t) pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + t });\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"const j = pm.response.json();\r",
+							"pm.test(\"Are email\", () => pm.expect(j).to.have.property(\"email\"));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/auth/me",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"auth",
+						"me"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RECIPES-SEARCH",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"pm.test(\"JSON\", () => pm.expect((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"application/json\")).to.be.true);\r",
+							"\r",
+							"let resp = {};\r",
+							"try { resp = pm.response.json(); } catch (e) { resp = {}; console.log(\"RECIPES-SEARCH: parse error\", e); }\r",
+							"\r",
+							"const list = Array.isArray(resp.items) ? resp.items : [];\r",
+							"pm.test(\"Lista e array (poate fi și goală)\", () => pm.expect(Array.isArray(list)).to.be.true);\r",
+							"\r",
+							"if (list.length > 0) {\r",
+							"  const r = list[0];\r",
+							"  pm.environment.set(\"recipe_id\", r.id);\r",
+							"  pm.environment.set(\"recipe_title\", r.title || \"\");\r",
+							"  pm.environment.set(\"recipe_image\", r.image || \"\");\r",
+							"  pm.environment.set(\"recipe_cuisine\", r.cuisine || \"\");\r",
+							"  pm.environment.set(\"recipe_meal_type\", r.meal_type || \"\");\r",
+							"  pm.test(\"Setează recipe_id\", () => pm.expect(pm.environment.get(\"recipe_id\")).to.be.a(\"string\"));\r",
+							"} else {\r",
+							"  pm.environment.unset(\"recipe_id\");\r",
+							"  pm.test(\"Niciun rezultat (ok în QA)\", () => true);\r",
+							"}\r",
+							""
+						],
+
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"ingredients\": [\"chicken\", \"tomato\"] }\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/recipes/search",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"recipes",
+						"search"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RECIPES-AI",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200 sau 503\", () => pm.expect([200,503]).to.include(pm.response.code));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"ingredients\": [\"chicken\", \"rice\"] }\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/recipes/ai",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"recipes",
+						"ai"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RECIPES-SAVE",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const token = pm.environment.get(\"auth_token\");\r",
+							"if (token) {\r",
+							"  pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + token });\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200/201/204\", () => pm.expect([200,201,204]).to.include(pm.response.code));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"title\": \"{{recipe_title}}\",\r\n  \"image\": \"{{recipe_image}}\",\r\n  \"source\": \"mealdb\",\r\n  \"cuisine\": \"{{recipe_cuisine}}\",\r\n  \"meal_type\": \"{{recipe_meal_type}}\",\r\n  \"tags\": [],\r\n  \"ingredients\": [\r\n    { \"name\": \"chicken\", \"measure\": \"\" },\r\n    { \"name\": \"tomato\", \"measure\": \"\" }\r\n  ],\r\n  \"instructions\": [\"Follow recipe steps from source.\"],\r\n  \"time_minutes\": 30,\r\n  \"servings\": 2,\r\n  \"difficulty\": \"Easy\",\r\n  \"nutrition_summary\": \"\",\r\n  \"is_ai_generated\": false\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/recipes/{{recipe_id}}/save",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"recipes",
+						"{{recipe_id}}",
+						"save"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USERS-ME-SAVED",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const token = pm.environment.get(\"auth_token\");\r",
+							"if (token) {\r",
+							"  pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + token });\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"const d = pm.response.json();\r",
+							"pm.test(\"items e array\", () => pm.expect(Array.isArray(d.items)).to.be.true);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/users/me/saved",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users",
+						"me",
+						"saved"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USERS-ME-SAVED",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const token = pm.environment.get(\"auth_token\");\r",
+							"if (token) {\r",
+							"  pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + token });\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200/204\", () => pm.expect([200,204]).to.include(pm.response.code));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/users/me/saved/{{recipe_id}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users",
+						"me",
+						"saved",
+						"{{recipe_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USERS-ME-PANTRY",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const token = pm.environment.get(\"auth_token\");\r",
+							"if (token) {\r",
+							"  pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + token });\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"const d = pm.response.json();\r",
+							"pm.test(\"items e array\", () => pm.expect(Array.isArray(d.items)).to.be.true);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/users/me/pantry",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users",
+						"me",
+						"pantry"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USERS-ME-PANTRY",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Auth header",
+							"const token = pm.environment.get(\"auth_token\");\r",
+							"if (token) {\r",
+							"  pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + token });\r",
+							"}\r",
+							"\r",
+							"// Ensure pantry_item_name exists BEFORE request is sent",
+							"let nm = pm.environment.get(\"pantry_item_name\");\r",
+							"if (!nm) {\r",
+							"  nm = `qa-item-${Date.now()}`;\r",
+							"  pm.environment.set(\"pantry_item_name\", nm);\r",
+							"  console.log(\"Generated pantry_item_name:\", nm);\r",
+							"}\r",
+							""
+						],
+
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200/201\", () => pm.expect([200,201]).to.include(pm.response.code));\r",
+							"\r",
+							"let resp = {};\r",
+							"try { resp = pm.response.json(); } catch(e) { resp = {}; }\r",
+							"\r",
+							"// Prefer name from API response (PantryItemOut), fallback to the request body we sent",
+							"let createdName = (resp && (resp.name || (resp.item && resp.item.name))) || null;\r",
+							"if (!createdName) {\r",
+							"  try {\r",
+							"    const sent = pm.request.body && pm.request.body.raw ? JSON.parse(pm.request.body.raw) : {};\r",
+							"    if (sent && sent.name) createdName = String(sent.name);\r",
+							"  } catch(e) {}\r",
+							"}\r",
+							"\r",
+							"if (createdName) {\r",
+							"  pm.environment.set(\"pantry_item_name\", createdName);\r",
+							"  pm.environment.set(\"pantry_item_name_encoded\", encodeURIComponent(createdName));\r",
+							"  console.log(\"Saved pantry_item_name:\", createdName);\r",
+							"} else {\r",
+							"  console.log(\"WARNING: pantry_item_name not found in response or request.\");\r",
+							"}\r",
+							""
+						],
+
+
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"{{pantry_item_name}}\",\r\n  \"quantity\": \"1 kg\",\r\n  \"expiry_date\": null\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/users/me/pantry",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users",
+						"me",
+						"pantry"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USERS-ME-PANTRY",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const token = pm.environment.get(\"auth_token\");\r",
+							"if (token) {\r",
+							"  pm.request.headers.upsert({ key: \"Authorization\", value: \"Bearer \" + token });\r",
+							"}\r",
+							"\r",
+							"const name = pm.environment.get(\"pantry_item_name_encoded\") || pm.environment.get(\"pantry_item_name\");\r",
+							"pm.expect(name, \"Missing pantry_item_name before DELETE\").to.be.ok;\r",
+							"if (name && pm.request.url.toString().includes(\"{{pantry_item_name}}\")) {\r",
+							"  // If you switch URL to use the encoded var, remove this block\r",
+							"  console.log(\"DELETE pantry name:\", name);\r",
+							"}\r",
+							""
+						],
+
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200/204\", () => pm.expect([200,204]).to.include(pm.response.code));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/users/me/pantry/{{pantry_item_name_encoded}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users",
+						"me",
+						"pantry",
+						"{{pantry_item_name_encoded}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"pm.globals.set(\"safeJsonScript\", `\r",
+					"function safeJson() {\r",
+					"  const ct = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+					"  if (ct.includes(\"application/json\")) {\r",
+					"    try { return pm.response.json(); } catch(e) { return {}; }\r",
+					"  }\r",
+					"  return {};\r",
+					"}\r",
+					"`);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

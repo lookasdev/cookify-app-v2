@@ -116,6 +116,12 @@ export interface ApiError {
   detail: string;
 }
 
+export interface AppStats {
+  users: number;
+  saved_recipes: number;
+  pantry_items: number;
+}
+
 // Pantry types
 export interface PantryItemIn {
   name: string;
@@ -149,11 +155,14 @@ class ApiClient {
     const url = `${this.baseUrl}${endpoint}`;
     const token = localStorage.getItem('token');
     const needsNgrokBypass = /ngrok\-free\.app|ngrok\.io/.test(this.baseUrl);
+    const publicEndpoints = new Set<string>(['/health', '/stats', '/']);
+    const isPublic = publicEndpoints.has(endpoint);
 
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
+        // Avoid Authorization on public endpoints to prevent preflight
+        ...(token && !isPublic ? { Authorization: `Bearer ${token}` } : {}),
         ...(needsNgrokBypass ? { 'ngrok-skip-browser-warning': 'true' } : {}),
         ...options.headers,
       },
@@ -210,6 +219,10 @@ class ApiClient {
 
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     return this.request<{ status: string; timestamp: string }>('/health');
+  }
+
+  async getStats(): Promise<AppStats> {
+    return this.request<AppStats>('/stats');
   }
 
   async searchRecipes(data: RecipeSearchRequest): Promise<RecipeSearchResponse> {

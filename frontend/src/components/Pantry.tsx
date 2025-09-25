@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { PantryItem } from '../App';
 
 interface PantryProps {
@@ -13,8 +13,38 @@ function parseDate(d?: string): number | null {
   return Number.isNaN(t) ? null : t;
 }
 
+function getExpiryStatus(expiryDate?: string): 'expired' | 'near' | 'ok' | 'none' {
+  if (!expiryDate) return 'none';
+  const ts = parseDate(expiryDate);
+  if (ts === null) return 'none';
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (ts < now - 1 * dayMs) return 'expired'; // expired (grace for time zones)
+  if (ts <= now + 3 * dayMs) return 'near'; // within 3 days
+  return 'ok';
+}
+
 export const Pantry: React.FC<PantryProps> = ({ items, onUpdate, onRemove }) => {
   const [query, setQuery] = useState('');
+  const [drafts, setDrafts] = useState<Record<string, { quantity: string; expiryDate?: string }>>({});
+
+  // Sync drafts when items change (e.g., after save or fetch)
+  useEffect(() => {
+    setDrafts(prev => {
+      const next: Record<string, { quantity: string; expiryDate?: string }> = { ...prev };
+      for (const it of items) {
+        next[it.name] = {
+          quantity: it.quantity || '',
+          expiryDate: it.expiryDate || undefined,
+        };
+      }
+      // Remove drafts for items no longer present
+      Object.keys(next).forEach(k => {
+        if (!items.find(i => i.name === k)) delete next[k];
+      });
+      return next;
+    });
+  }, [items]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -63,7 +93,37 @@ export const Pantry: React.FC<PantryProps> = ({ items, onUpdate, onRemove }) => 
           {sorted.map(item => (
             <div key={item.name} className="pantry-item">
               <div className="pantry-header">
-                <div className="pantry-name">{item.name}</div>
+                <div className="pantry-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>{item.name}</span>
+                  {(() => {
+                    const status = getExpiryStatus(item.expiryDate);
+                    if (status === 'expired') {
+                      return (
+                        <span style={{
+                          background: '#ffe5e5',
+                          color: '#b00000',
+                          border: '1px solid #ffb3b3',
+                          borderRadius: '999px',
+                          padding: '0.1rem 0.5rem',
+                          fontSize: '0.75rem',
+                        }}>Expired</span>
+                      );
+                    }
+                    if (status === 'near') {
+                      return (
+                        <span style={{
+                          background: '#fff7e6',
+                          color: '#8a5d00',
+                          border: '1px solid #ffdf99',
+                          borderRadius: '999px',
+                          padding: '0.1rem 0.5rem',
+                          fontSize: '0.75rem',
+                        }}>Expiring soon</span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
                 <button className="remove-button-small" onClick={() => onRemove(item.name)} title="Remove">
                   ✕
                 </button>
@@ -73,8 +133,11 @@ export const Pantry: React.FC<PantryProps> = ({ items, onUpdate, onRemove }) => 
                   <label>Quantity</label>
                   <input
                     type="text"
-                    value={item.quantity}
-                    onChange={(e) => onUpdate(item.name, { quantity: e.target.value })}
+                    value={drafts[item.name]?.quantity ?? ''}
+                    onChange={(e) => setDrafts(d => ({
+                      ...d,
+                      [item.name]: { ...(d[item.name] || { quantity: '', expiryDate: item.expiryDate }), quantity: e.target.value },
+                    }))}
                     placeholder="e.g., 2 packs, 500 g"
                   />
                 </div>
@@ -82,10 +145,32 @@ export const Pantry: React.FC<PantryProps> = ({ items, onUpdate, onRemove }) => 
                   <label>Expiry date</label>
                   <input
                     type="date"
-                    value={item.expiryDate || ''}
-                    onChange={(e) => onUpdate(item.name, { expiryDate: e.target.value || undefined })}
+                    value={drafts[item.name]?.expiryDate || ''}
+                    onChange={(e) => setDrafts(d => ({
+                      ...d,
+                      [item.name]: { ...(d[item.name] || { quantity: item.quantity || '' }), expiryDate: e.target.value || undefined },
+                    }))}
                   />
                 </div>
+                {(() => {
+                  const draft = drafts[item.name] || { quantity: item.quantity || '', expiryDate: item.expiryDate };
+                  const unchanged = (draft.quantity || '') === (item.quantity || '') && (draft.expiryDate || '') === (item.expiryDate || '');
+                  if (unchanged) return null;
+                  return (
+                    <div className="form-group" style={{ alignSelf: 'flex-end' }}>
+                      <button
+                        type="button"
+                        className="login-btn"
+                        onClick={async () => {
+                          await onUpdate(item.name, { quantity: draft.quantity, expiryDate: draft.expiryDate });
+                        }}
+                        title="Save changes"
+                      >
+                        Update
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           ))}

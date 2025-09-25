@@ -9,7 +9,6 @@ import { Pantry } from './components/Pantry';
 import { api, SavedRecipe, Recipe, AIRecipe, PantryItemOut, PantryItemIn } from './api';
 import './App.css';
 
-import cookingCatIllustration from './assets/cookingcat.webp';
 type Tab = 'auth' | 'profile' | 'recipes' | 'ingredients' | 'about' | 'pantry';
 
 export interface PantryItem {
@@ -241,17 +240,15 @@ function App() {
   return (
     <>
       <div className="app">
-      <header className="app-header">
-        <div className="app-header-content">
-          <h1>Cookify</h1>
-          <p className="app-tagline">Plan meals, manage your pantry, and cook smarter with AI assistance.</p>
+      <div className="topbar" role="banner">
+        <div className="topbar-inner">
+          <img className="topbar-logo" src="/logo.png" alt="Cookify logo" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+          <div className="topbar-text">
+            <span className="topbar-brand" aria-label="Brand">Cookify</span>
+            <span className="topbar-title" aria-label="App description">Plan meals, manage your pantry, and cook smarter.</span>
+          </div>
         </div>
-
-        <div className="header-illustration" aria-hidden="true">
-          <img src={cookingCatIllustration} alt="" />
-        </div>
-      </header>
-
+      </div>
       <div className="app-layout">
         <main className="app-main">
           {activeTab === 'auth' && (

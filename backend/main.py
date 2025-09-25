@@ -4,6 +4,7 @@ import json
 import uuid
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
@@ -39,13 +40,22 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         CORS_ORIGIN,
+        "https://cookify-host.netlify.app",
         "https://incredible-sundae-e9647d.netlify.app",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
     ],
+    allow_origin_regex=r"https://[a-zA-Z0-9\-]+\.(ngrok-free\.app|ngrok\.io|netlify\.app)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
+
+# Fallback handler for OPTIONS to ensure preflights always receive 200 with CORS headers
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str):
+    return Response(status_code=200)
 
 # Security
 security = HTTPBearer()
@@ -110,6 +120,25 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+
+@app.get("/stats")
+async def get_stats():
+    """Public stats: total users, saved recipes, and pantry items"""
+    try:
+        users_count = await users_collection.count_documents({})
+        saved_recipes_count = await saved_recipes_collection.count_documents({})
+        pantry_items_count = await pantry_collection.count_documents({})
+        return {
+            "users": users_count,
+            "saved_recipes": saved_recipes_count,
+            "pantry_items": pantry_items_count,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch stats",
+        )
 
 
 @app.get("/debug/users")
