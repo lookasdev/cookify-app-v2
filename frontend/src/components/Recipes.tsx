@@ -234,13 +234,13 @@ export const Recipes: React.FC<RecipesProps> = ({
                         onClick={() => handleSaveRecipe(recipe)}
                         disabled={savingRecipe === recipe.id}
                       >
-                        {savingRecipe === recipe.id ? 'Saving...' : 'Save'}
+                        {savingRecipe === recipe.id ? 'Saving...' : 'Save to Profile'}
                       </button>
                     )
                   ) : (
                     <div className="login-tooltip" title="Login to save recipes">
                       <button className="save-button disabled" disabled>
-                        Save
+                        Save to Profile
                       </button>
                     </div>
                   )}
@@ -335,13 +335,13 @@ export const Recipes: React.FC<RecipesProps> = ({
                         onClick={() => handleSaveRecipe(recipe)}
                         disabled={savingRecipe === recipe.id}
                       >
-                        {savingRecipe === recipe.id ? 'Saving...' : 'Save'}
+                        {savingRecipe === recipe.id ? 'Saving...' : 'Save to Profile'}
                       </button>
                     )
                   ) : (
                     <div className="login-tooltip" title="Login to save recipes">
                       <button className="save-button disabled" disabled>
-                        Save
+                        Save to Profile
                       </button>
                     </div>
                   )}

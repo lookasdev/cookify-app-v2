@@ -205,15 +205,15 @@ export const Ingredients: React.FC<IngredientsProps> = ({ onSelect, onSelectionC
                   return (
                     <li key={name} className="ingredient-row">
                       <div className="ingredient-option" style={{ justifyContent: 'space-between' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <input
-                            type="checkbox"
-                            checked={selected.includes(name)}
-                            onChange={() => toggle(name)}
-                            title="Add to search"
-                          />
-                          <span>{name}</span>
-                        </label>
+                        <button
+                          className={`search-button ${selected.includes(name) ? 'selected' : ''}`}
+                          onClick={() => toggle(name)}
+                          title="Add to search"
+                          type="button"
+                        >
+                          <span className="ingredient-name">{name}</span>
+                          <span className="search-arrow">→</span>
+                        </button>
                         {onAddToPantry && (
                           <button
                             className={inPantry ? 'unsave-button' : 'save-button'}
@@ -222,7 +222,7 @@ export const Ingredients: React.FC<IngredientsProps> = ({ onSelect, onSelectionC
                             disabled={pending === name}
                             title={inPantry ? 'Remove from Pantry' : 'Add to Pantry'}
                           >
-                            {pending === name ? (inPantry ? 'Removing...' : 'Adding...') : inPantry ? 'Saved ✓' : 'Save'}
+                            {pending === name ? (inPantry ? 'Removing...' : 'Adding...') : inPantry ? 'Saved ✓' : 'Save to Pantry'}
                           </button>
                         )}
                       </div>

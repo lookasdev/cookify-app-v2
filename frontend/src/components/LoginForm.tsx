@@ -144,16 +144,47 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         </div>
       </form>
 
-      <div style={{ marginTop: '1rem', fontSize: '0.95rem', opacity: 0.9 }}>
-        {statsLoading && <span>Loading app stats…</span>}
+      <div className="login-stats">
+        {statsLoading && (
+          <div className="stats-loading">
+            <div className="loading-spinner"></div>
+            <span>Loading app stats…</span>
+          </div>
+        )}
         {!statsLoading && statsError && (
-          <span style={{ color: '#c00' }}>{statsError}</span>
+          <div className="stats-error">
+            <span>Unable to load stats</span>
+          </div>
         )}
         {!statsLoading && !statsError && stats && (
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <div><strong>{stats.users}</strong> users</div>
-            <div><strong>{stats.saved_recipes}</strong> saved recipes</div>
-            <div><strong>{stats.pantry_items}</strong> pantry items</div>
+          <div className="stats-container">
+            <div className="stats-header">
+              <h3>Community Stats</h3>
+              <p>Join thousands of home cooks</p>
+            </div>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">👥</div>
+                <div className="stat-content">
+                  <div className="stat-number">{stats.users.toLocaleString()}</div>
+                  <div className="stat-label">Active Users</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">🍽️</div>
+                <div className="stat-content">
+                  <div className="stat-number">{stats.saved_recipes.toLocaleString()}</div>
+                  <div className="stat-label">Saved Recipes</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">📦</div>
+                <div className="stat-content">
+                  <div className="stat-number">{stats.pantry_items.toLocaleString()}</div>
+                  <div className="stat-label">Pantry Items</div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

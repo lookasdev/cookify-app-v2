@@ -25,11 +25,65 @@ load_dotenv()
 
 # Configure Gemini AI
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
+gemini_model = None
+
+def get_available_models():
+    """Get list of available Gemini models"""
+    try:
+        models = genai.list_models()
+        available_models = []
+        for model in models:
+            if 'generateContent' in model.supported_generation_methods:
+                available_models.append(model.name)
+        return available_models
+    except Exception as e:
+        print(f"Failed to list models: {e}")
+        return []
+
+def initialize_gemini_model():
+    """Initialize Gemini model with available model"""
+    if not GEMINI_API_KEY:
+        return None
+    
     genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel('gemini-1.5-flash')
-else:
-    gemini_model = None
+    
+    # Get available models
+    available_models = get_available_models()
+    print(f"Available Gemini models: {available_models}")
+    
+    # Try to find a working model (prioritizing latest stable models)
+    model_candidates = [
+        'gemini-2.5-flash-lite',      # Latest stable (July 2025)
+        'gemini-2.5-flash',           # Latest stable (June 2025)
+        'gemini-2.5-pro',             # Latest stable (June 2025)
+        'gemini-2.0-flash-001',       # Stable (February 2025)
+        'gemini-2.0-flash-lite-001',  # Stable (February 2025)
+        'gemini-1.5-flash-002',       # Fallback
+        'gemini-1.5-flash-001',       # Fallback
+        'gemini-1.5-pro-002',         # Fallback
+        'gemini-1.5-pro-001',         # Fallback
+        'gemini-1.5-flash',           # Fallback
+        'gemini-1.5-pro',             # Fallback
+        'gemini-pro'                  # Final fallback
+    ]
+    
+    for model_name in model_candidates:
+        try:
+            # Check if this model is in the available list
+            if any(model_name in model for model in available_models):
+                print(f"Trying model: {model_name}")
+                model = genai.GenerativeModel(model_name)
+                print(f"✅ Successfully initialized model: {model_name}")
+                return model
+        except Exception as e:
+            print(f"Failed to initialize {model_name}: {e}")
+            continue
+    
+    print("❌ No working Gemini model found")
+    return None
+
+if GEMINI_API_KEY:
+    gemini_model = initialize_gemini_model()
 
 # Initialize FastAPI app
 app = FastAPI(title="Auth App API", version="1.0.0")
@@ -152,6 +206,28 @@ async def debug_users():
             "created_at": user["created_at"]
         })
     return {"users": users, "count": len(users)}
+
+
+@app.get("/debug/ai")
+async def debug_ai():
+    """Debug endpoint to check AI configuration"""
+    model_name = "unknown"
+    if gemini_model:
+        try:
+            model_name = str(gemini_model.model_name) if hasattr(gemini_model, 'model_name') else "gemini-model"
+        except:
+            model_name = "gemini-model"
+    
+    # Get available models for debugging
+    available_models = get_available_models()
+    
+    return {
+        "gemini_configured": gemini_model is not None,
+        "api_key_set": GEMINI_API_KEY is not None,
+        "api_key_length": len(GEMINI_API_KEY) if GEMINI_API_KEY else 0,
+        "model_name": model_name,
+        "available_models": available_models[:10]  # Show first 10 models
+    }
 
 
 @app.post("/auth/register", response_model=UserPublic)
@@ -622,11 +698,19 @@ async def generate_ai_recipes(request: AIRecipeRequest):
         
         return AIRecipeResponse(items=ai_recipes)
         
-    except Exception as e:
-        print(f"AI recipe generation error: {e}")
+    except json.JSONDecodeError as e:
+        print(f"AI recipe JSON decode error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate AI recipes"
+            detail=f"Failed to parse AI response: {str(e)}"
+        )
+    except Exception as e:
+        print(f"AI recipe generation error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate AI recipes: {str(e)}"
         )
 
 

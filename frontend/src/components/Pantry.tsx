@@ -91,60 +91,41 @@ export const Pantry: React.FC<PantryProps> = ({ items, onUpdate, onRemove }) => 
       ) : (
         <div className="pantry-list">
           {sorted.map(item => (
-            <div key={item.name} className="pantry-item">
-              <div className="pantry-header">
-                <div className="pantry-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span>{item.name}</span>
+            <div key={item.name} className="pantry-item-compact">
+              <div className="pantry-item-header">
+                <div className="pantry-item-name">
+                  <span className="item-name">{item.name}</span>
                   {(() => {
                     const status = getExpiryStatus(item.expiryDate);
                     if (status === 'expired') {
-                      return (
-                        <span style={{
-                          background: '#ffe5e5',
-                          color: '#b00000',
-                          border: '1px solid #ffb3b3',
-                          borderRadius: '999px',
-                          padding: '0.1rem 0.5rem',
-                          fontSize: '0.75rem',
-                        }}>Expired</span>
-                      );
+                      return <span className="status-badge expired">Expired</span>;
                     }
                     if (status === 'near') {
-                      return (
-                        <span style={{
-                          background: '#fff7e6',
-                          color: '#8a5d00',
-                          border: '1px solid #ffdf99',
-                          borderRadius: '999px',
-                          padding: '0.1rem 0.5rem',
-                          fontSize: '0.75rem',
-                        }}>Expiring soon</span>
-                      );
+                      return <span className="status-badge expiring">Expiring soon</span>;
                     }
                     return null;
                   })()}
                 </div>
-                <button className="remove-button-small" onClick={() => onRemove(item.name)} title="Remove">
+                <button className="remove-button-compact" onClick={() => onRemove(item.name)} title="Remove">
                   ✕
                 </button>
               </div>
-              <div className="pantry-fields">
-                <div className="form-group">
-                  <label>Quantity</label>
+              
+              <div className="pantry-item-fields">
+                <div className="field-group">
                   <input
                     type="text"
+                    className="quantity-input"
                     value={drafts[item.name]?.quantity ?? ''}
                     onChange={(e) => setDrafts(d => ({
                       ...d,
                       [item.name]: { ...(d[item.name] || { quantity: '', expiryDate: item.expiryDate }), quantity: e.target.value },
                     }))}
-                    placeholder="e.g., 2 packs, 500 g"
+                    placeholder="Quantity (e.g., 2 packs, 500g)"
                   />
-                </div>
-                <div className="form-group">
-                  <label>Expiry date</label>
                   <input
                     type="date"
+                    className="date-input"
                     value={drafts[item.name]?.expiryDate || ''}
                     onChange={(e) => setDrafts(d => ({
                       ...d,
@@ -152,23 +133,22 @@ export const Pantry: React.FC<PantryProps> = ({ items, onUpdate, onRemove }) => 
                     }))}
                   />
                 </div>
+                
                 {(() => {
                   const draft = drafts[item.name] || { quantity: item.quantity || '', expiryDate: item.expiryDate };
                   const unchanged = (draft.quantity || '') === (item.quantity || '') && (draft.expiryDate || '') === (item.expiryDate || '');
                   if (unchanged) return null;
                   return (
-                    <div className="form-group" style={{ alignSelf: 'flex-end' }}>
-                      <button
-                        type="button"
-                        className="login-btn"
-                        onClick={async () => {
-                          await onUpdate(item.name, { quantity: draft.quantity, expiryDate: draft.expiryDate });
-                        }}
-                        title="Save changes"
-                      >
-                        Update
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="update-button-compact"
+                      onClick={async () => {
+                        await onUpdate(item.name, { quantity: draft.quantity, expiryDate: draft.expiryDate });
+                      }}
+                      title="Save changes"
+                    >
+                      Update
+                    </button>
                   );
                 })()}
               </div>
